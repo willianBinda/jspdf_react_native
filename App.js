@@ -1,193 +1,354 @@
 import React from "react";
-import { View } from "react-native";
-import WebView from "react-native-webview";
-import RNFS, { downloadFile } from 'react-native-fs'
-import FileViewer from 'react-native-file-viewer'
+import { Button, View } from "react-native";
+import HTMLTOPDF from 'react-native-html-to-pdf';
+import FileViewer from 'react-native-file-viewer';
 
 export default () => {
+  const gerar = async () => {
+    const dados_cinco_mil = [];
 
-  const handleWebViewMessage = (event) => {
+    for (let i = 0; i < 100; i++) {
+      dados_cinco_mil.push(i);
+    }
 
-    const data = event.nativeEvent.data
+    const tr = dados_cinco_mil
+      .map(
+        e => `
+          <tr>
+            <td>1</td>
+            <td>2</td>
+            <td>3</td>
+            <td>4</td>
+            <td>5</td>
+            <td>6</td>
+            <td>7</td>
+            <td>8</td>
+          </tr>
+        `
+      )
+      .join("");
 
-    const dir = RNFS.DocumentDirectoryPath + '/willian.pdf';
+    const model = `
+      <!DOCTYPE html>
+      <html lang="en">
+      
+      <head>
+          <style>
+              @page {
+                margin-top: 40mm;
+                margin-bottom: 15mm;
+              }
+              
+              .header {
+                  width: 100%;
+                  justify-content: space-between;
+                  display: flex;
+                  position: fixed;
+                  top: 0;
+                  left: 0;
+              }
+      
+              .text_header {
+                  font-size: 20px;
+                  align-self: center;
+              }
+      
+              .title {
+                  font-size: 25px;
+                  text-align: center;
+                  width: 100%;
+                  margin-top: 20px;
+                  margin-bottom: 20px;
+              }
+      
+              .tabela {
+                  width: 100%;
+                  text-align: center;
+              }
+      
+              .table {
+                  margin: auto;
+              }
+      
+              td {
+                  border: none;
+                  font-size: 10px;
+              }
+      
+              th {
+                  border: none;
+              }
+      
+              .even_odd tr:nth-child(even) {
+                  background: lightgray;
+              }
+      
+              .botton {
+                  text-align: left;
+              }
+              
+              .footer {
+                  position: fixed;
+                  bottom: 0;
+                  left: 0;
+                  width: 100%;
+                  text-align: center;
+                  font-size: 10px;
+              }
+          </style>
+      </head>
+      
+      <body>
+          <div class="header">
+              <img src='https://teslacomercial.com.br/novo/wp-content/uploads/2021/08/21.png' width="150px" height="50px">
+              <div class="text_header">Relatório insensibilização - Linha 1 - </div>
+              <div class="text_header">CLIENTE E UNIDADE</div>
+          </div>
+          <div class="title">
+              Fluxo Equipamentos Industrial
+          </div>
+          <div class="tabela">
+              <table class="table">
+                  <thead>
+                      <tr>
+                          <th>Equipamento</th>
+                          <th>Duty Cycle</th>
+                          <th>Tempo ON</th>
+                          <th>Tempo OFF</th>
+                          <th>Forma de onda</th>
+                          <th>Corrente</th>
+                          <th>Frequencia</th>
+                          <th>Tensao</th>
+                      </tr>
+                  </thead>
+                  <tbody class="even_odd">
+                      ${tr}
+                  </tbody>
+                  <tfoot>
+                      <tr>
+                          <td colspan="8" class="botton">
+                              Data de geração do relatório:
+                          </td>
+                      </tr>
+                  </tfoot>
+              </table>
+          </div>
+          <htmlpageheader name="header">
+            <div class="header">
+              <img src='https://teslacomercial.com.br/novo/wp-content/uploads/2021/08/21.png' width="150px" height="50px">
+              <div class="text_header">Relatório insensibilização - Linha 1 - </div>
+              <div class="text_header">CLIENTE E UNIDADE</div>
+            </div>
+          </htmlpageheader>
+          <htmlpagefooter name="footer">
+            <div class="footer">
+              <script>
+                function subst() {
+                  var footer = document.getElementsByClassName("footer");
+                  var pageCount = document.querySelectorAll(".pdf-page").length;
+                  for (var i = 0; i < footer.length; i++) {
+                    footer[i].innerHTML = "<div>Página " + pageNum + " de " + pageCount + "</div>";
+                  }
+                }
+                subst();
+              </script>
+            </div>
+          </htmlpagefooter>
+      </body>
+      
+      </html>
+    `;
 
-    RNFS.writeFile(dir, data, 'ascii').then(() => {
-      FileViewer.open(dir);
-    }).catch((error) => {
-      console.log('Erro ao escrever o arquivo:', error);
-    });
+    const options = {
+      html: model,
+      fileName: 'Relatório5',
+      directory: 'Downloads',
+    //   height: '11in',
+    //   width: '8.5in',
+      padding: '10px',
+      footerHeight: '10mm',
+      headerHeight: '40mm',
+    };
 
+    try {
+      const file = await HTMLTOPDF.convert(options);
+      FileViewer.open(file.filePath);
+      console.log('Gerando PDF!!!');
+    } catch (error) {
+      console.log('ERRO AO VISUALIZAR PDF:', error);
+    }
   };
 
-  const htmlContent = `
-  <html>
-  <header>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.2/jspdf.min.js"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.6/jspdf.plugin.autotable.js"></script>
-  </header>
-  
-  <body>
-      <button id="generatePdfButton" style="width:100%;height:200px;background-color: red;font-size: 50px;">Gerar
-          PDF</button>
-      <script>
-          document.getElementById("generatePdfButton").addEventListener("click", function () {
-              var doc = new jsPDF('landscape');
-  
-              const formatted_data = []
-              const dados = [1, 2, 3, 4, 5]
-              dados.forEach(e => {
-                  formatted_data.push([
-                      '10/10/2023 - 10:10:10',
-                      "1",
-                      "2",
-                      "4",
-                      "3"
-                  ]);
-              });
-  
-              var totalPagesExp = '{total_pages_count_string}';
-  
-              doc.autoTable({
-                  theme: 'grid',
-                  margin: {
-                      left: 20
-                  },
-                  headStyles: {
-                      fillColor: [255, 255, 255],
-                      textColor: 0,
-                      halign: 'center',
-                  },
-                  alternateRowStyles: {
-                      fillColor: [220, 220, 220],
-                      textColor: 0,
-                      halign: 'center',
-                  },
-                  columnStyles: {
-                      0: {
-                          halign: 'center',
-                          cellWidth: 50,
-                      },
-                      1: {
-                          halign: 'center',
-                          cellWidth: 50,
-                      },
-                      2: {
-                          halign: 'center',
-                          cellWidth: 50,
-                      },
-                      3: {
-                          halign: 'center',
-                          cellWidth: 50,
-                      },
-                      4: {
-                          halign: 'center',
-                          cellWidth: 50,
-                      }
-                  },
-                  head: [
-                      [
-                          '',
-                          {
-                              content: 'Relatório insensibilização - Linha 1 - 10/10/2023',
-                              colSpan: 3
-                          },
-                          {
-                              content: 'Usuário logado: willian',
-                              colSpan: 1
-                          }
-                      ],
-                      [
-                          {
-                              content: 'Fluxo Equipamentos Industriais',
-                              colSpan: 5,
-                              styles: { fontSize: 15 },
-                          }
-                      ],
-                      [{
-                          content: 'Unidade: chapeco',
-                          colSpan: 5,
-                          styles: { fontSize: 15 },
-                      }],
-                      [{
-                          content: 'Equipamento: ufx7',
-                          colSpan: 5,
-                          styles: { fontSize: 15 },
-                      }],
-                      [
-                          'Data - Hora',
-                          'Forma de onda',
-                          "Corrente (Ampère - A)",
-                          "Frequência (Hertz - Hz)",
-                          'Tensão (Volts - V)'
-                      ]
-                  ],
-                  body: formatted_data,
-                  didDrawPage: function (data) {
-                      var str = 'Página ' + doc.internal.getNumberOfPages();
-                      if (typeof doc.putTotalPages === 'function') {
-                          str = 'Data de geração do relatório: 10/10/2023 - '+ str + 'de' + totalPagesExp;
-                      }
-                      doc.setFontSize(10);
-                      var pageSize = doc.internal.pageSize;
-                      var pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
-                      doc.text(str, data.settings.margin.left, pageHeight - 10);
-                  },
-              });
-  
-              if (typeof doc.putTotalPages === 'function') {
-                  doc.putTotalPages(totalPagesExp);
-              }
-  
-              const pdfOutput = doc.output();
-            
-              window.ReactNativeWebView.postMessage(pdfOutput);
-          });
-      </script>
-  </body>
-  
-  </html>
-  `;
-
   return (
-    <View style={{ flex: 1 }}>
-      <WebView
-        source={{ html: htmlContent }}
-        onMessage={handleWebViewMessage}
-      />
+    <View>
+      <Button title="Gerar" onPress={gerar} />
     </View>
   );
 };
 
-/*
-`
-  <html>
-<header>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.2/jspdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/2.3.2/jspdf.plugin.autotable.js"></script>
-</header>
 
-<body>
-    <button id="generatePdfButton" style="width:100%;height:200px;background-color: red;font-size: 50px;">Gerar PDF</button>
-    <script>
-        document.getElementById("generatePdfButton").addEventListener("click", function () {
-            var doc = new jsPDF('landscape');
 
-            const columns = ["Column 1", "Column 2", "Column 3"];
-            const data = [
-                ["Row 1 Data 1", "Row 1 Data 2", "Row 1 Data 3"],
-                ["Row 2 Data 1", "Row 2 Data 2", "Row 2 Data 3"],
-                ["Row 3 Data 1", "Row 3 Data 2", "Row 3 Data 3"],
-            ];
 
-            doc.autoTable(columns, data);   
-            const pdfOutput = doc.output();
-          
-            window.ReactNativeWebView.postMessage(pdfOutput);
-        });
-    </script>
-</body>
 
-</html>
-  `
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import { Button, View } from "react-native"
+// import HTMLTOPDF from 'react-native-html-to-pdf'
+// import FIleViewer from 'react-native-file-viewer'
+
+// export default () => {
+
+
+//     const gerar = async () => {
+//         var dados_cinco_mil = []
+        
+//         for(let i = 0;i<100;i++){
+//             dados_cinco_mil.push(i)
+//         }
+//         const tr = dados_cinco_mil.map(e =>
+//             `
+//                 <tr>
+//                     <td>1</td>
+//                     <td>2</td>
+//                     <td>3</td>
+//                     <td>4</td>
+//                     <td>5</td>
+//                     <td>6</td>
+//                     <td>7</td>
+//                     <td>8</td>
+//                 </tr>
+//             `).join("")
+//         // console.log(tr)
+//         const model =
+//             `
+//     <!DOCTYPE html>
+//     <html lang="en">
+    
+//     <head>
+//         <style>
+//             .header {
+//                 width: 100%;
+//                 justify-content: space-between;
+//                 display: flex;
+//             }
+    
+//             .text_header {
+//                 font-size: 20;
+//                 align-self: center;
+//             }
+    
+//             .title {
+//                 font-size: 25px;
+//                 text-align: center;
+//                 width: 100%;
+//                 margin-top: 20px;
+//                 margin-bottom: 20px;
+//             }
+    
+//             .tabela {
+//                 width: 100%;
+//                 text-align: center;
+//             }
+    
+//             .table {
+//                 margin: auto;
+//             }
+    
+//             td {
+//                 border: none;
+//                 font-size: 10px;
+//             }
+    
+//             th {
+//                 border: none;
+//             }
+    
+//             .even_odd tr:nth-child(even) {
+//                 background: lightgray;
+//             }
+    
+//             .botton {
+//                 text-align: left;
+//             }
+//         </style>
+//     </head>
+    
+//     <body>
+//         <div class="header">
+//             <img src='https://teslacomercial.com.br/novo/wp-content/uploads/2021/08/21.png' width="150px" height="50px">
+//             <div class="text_header">Relatório insensibilização - Linha 1 - </div>
+//             <div class="text_header">CLIENTE E UNIDADE</div>
+//         </div>
+//         <div class="title">
+//             Fluxo Equipamentos Industrial
+//         </div>
+//         <div class="tabela">
+//             <table class="table">
+//                 <thead>
+//                     <tr>
+//                         <th>Equipamento</th>
+//                         <th>Duty Cycle</th>
+//                         <th>Tempo ON</th>
+//                         <th>Tempo OFF</th>
+//                         <th>Forma de onda</th>
+//                         <th>Corrente</th>
+//                         <th>Frequencia</th>
+//                         <th>Tensao</th>
+//                     </tr>
+//                 </thead>
+//                 <tbody class="even_odd">
+//                     ${tr}
+//                 </tbody>
+//                 <tfoot>
+//                     <tr>
+//                         <td colspan="9" class="botton">
+//                             Data de geração do relátorio: 
+//                         </td>
+//                     </tr>
+//                 </tfoot>
+//             </table>
+//         </div>
+//     </body>
+    
+//     </html>
+// `
+//         const options = {
+//             html: model,
+//             fileName: 'Relatório5',
+//             directory: 'Downloads',
+//             // directory: '../../../../Download',
+//         };
+//         const file = await HTMLTOPDF.convert(options)
+//         // console.log(file.filePath)
+//         FIleViewer.open(file.filePath)
+//             .then(() => {
+//                 console.log('gerando PDF!!!')
+//             })
+//             .catch((error) => {
+//                 console.log("ERRO AO VISUALIZAR PDF")
+//             });
+//     }
+
+
+
+//     return (
+//         <View>
+//             <Button
+//                 title="gerar"
+//                 onPress={() => { gerar() }}
+//             />
+//         </View>
+//     )
+// }
